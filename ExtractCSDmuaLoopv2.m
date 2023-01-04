@@ -6,12 +6,16 @@ close all
 %% path info 
 
 
-% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010\1-bu009010034@os';
-%    '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010\2-bu009010034@os'};
 
-paths = {'C:\Users\cmackey\Documents\MATLAB\1-bu009010034@os';
-    'C:\Users\cmackey\Documents\MATLAB\2-bu009010034@os'
-    };
+paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu015016\1-bu015016038@os';
+   '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu015016\2-bu015016038@os'};
+
+% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010\1-bu009010028@os';
+%    '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010\2-bu009010028@os'};
+
+% paths = {'C:\Users\cmackey\Documents\MATLAB\1-bu009010034@os';
+%     'C:\Users\cmackey\Documents\MATLAB\2-bu009010034@os'
+%     };
 
 %% loop through the function to extract data and find outliers
 all=cell(length(paths));
@@ -72,12 +76,32 @@ xlags = {zeros(numtrs,length(chs1))};
 for chanct = 1:length(chs1)
     
     for tr_ct = 1:numtrs
-
+        
+        
         xtmp = squeeze(site1LFP(chs1(chanct),tr_ct,:)); % one trial from site 1 (e.g. MGB)
         ytmp = squeeze(site2CSD(chs2(chanct),tr_ct,:)); % same trial from site 2
-        [r,lags] = xcorr(xtmp,ytmp,'coeff');
+        [r,lags] = xcorr(xtmp,ytmp,'coeff'); %cross correlation
         corrs{tr_ct,chanct} = r;
         xlags{tr_ct,chanct} = lags';
+        
+        
+        
+        % recording the peaks in the xcorrelogram
+        if min(r)<0
+            negpeaks(tr_ct,chanct) = min(r(r<0));
+            negpeaklags(tr_ct,chanct) = lags(r==negpeaks(tr_ct,chanct));
+        else
+            negpeaks(tr_ct,chanct) = NaN;
+            negpeaklags(tr_ct,chanct) = NaN;
+        end
+        
+        if max(r)>0
+            pospeaks(tr_ct,chanct) = max(r(r>0));
+            pospeaklags(tr_ct,chanct) = lags(r==pospeaks(tr_ct,chanct));
+        else
+            pospeaks(tr_ct,chanct) = NaN;
+            pospeaklags(tr_ct,chanct) = NaN;
+        end
         
     end
     
@@ -86,27 +110,48 @@ end
 
 %% sorting
 
+% channels of interest that get sorted/plotted
+chcombo1 = 402;
+chcombo2 = 407;
 
 % check CSDs if needed
 if plott == 1
+    
     figure
     axpos=[0.1 0.1 0.8 0.8];
     figureax1a=axes('Position',axpos);
     [cax2] = csd_maker_no_subplot07(squeeze(mean(site2CSD(:,:,:),2)),(-200:2:200),1,[-10 200],[0 0],[],axpos,figureax1a);
     colormap(figureax1a,flipud(jet))
+    
 end
 
 % plot a few trials' cross correlations
 figure
-for sorttrs = 30:1:32
-    subplot(1,3,sorttrs-29)
-    plot(xlags{sorttrs,45}(:),corrs{sorttrs,45}(:))
+for sorttrs = 40:1:42
+    
+    subplot(2,3,sorttrs-39)
+    plot(xlags{sorttrs,chcombo1}(:),corrs{sorttrs,chcombo1}(:))
     hold on 
-    plot(xlags{sorttrs,55}(:),corrs{sorttrs,55}(:))
-    ylim([-0.5,0.5])
+    plot(xlags{sorttrs,chcombo2}(:),corrs{sorttrs,chcombo2}(:))
+    ylim([-0.6,0.6])
     ylabel('Cross Corr. Coeff')
     xlabel('Cross Corr. lag Re: noise onset(ms)')
     title(['MGB -> A1 cross corr. Trial #', sprintf(num2str(sorttrs))])
-    legend('MGD -> A1 layer 1','MGV-> A1 layer 4')
+    legend('MGD -> infra. A1','MGV -> infra. A1')
+    
 end
+
+subplot(2,3,4)
+histogram(negpeaklags(:,chcombo1),'BinWidth',10,'Normalization','pdf') 
+hold on
+histogram(negpeaklags(:,chcombo2),'BinWidth',10,'Normalization','pdf')
+legend('MGD -> infra A1','MGV-> infra A1')
+title('Negative X corr peaks')
+hold on
+subplot(2,3,6)
+histogram(pospeaklags(:,chcombo1),'BinWidth',10,'Normalization','pdf') 
+hold on
+histogram(pospeaklags(:,chcombo2),'BinWidth',10,'Normalization','pdf') 
+legend('MGD -> infra A1','MGV-> infra A1')
+title('Positive X corr peaks')
 

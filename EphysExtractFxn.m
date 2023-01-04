@@ -2,7 +2,7 @@ function [eegcb, eegbb, trig01] = EphysExtractFxn(path)
 
 %% extraction of lfp, csd, mua
 % this function takes a file path and gets LFP and MUA data out of the file
-% Chase Mackey 2022
+% edits by Chase Mackey 2022
 
 
 % load data
@@ -13,7 +13,7 @@ fname = path;
 
 %% INPUTS (filtering, epoch timing etc.)%
 timeframe_baseline              = [-200 0];
-epoch_tframe            = [-200 300];  
+epoch_tframe            = [-250 250];  
 newadrate =500;
 filtere = [0.5 300];%LFP
 filteru = [300 5000];%MUA
@@ -23,10 +23,21 @@ xlabelres=5;
 %
 
 %% epoching and filtering
+
+% set timeframe
 time = epoch_tframe(1):1000/newadrate:epoch_tframe(2);
+
+% extract continuous ephys data and triggers
 [cnt_arej, cnte, cntm, cntc, cntu, cntb] = module_cnt05(craw, newadrate, filtere, filteru, filtertype);
 [trig1s,ttype1s, triglength1s, findex2s] = module_trig01(trig, params);
-trig0=trig.anatrig{1};
+
+% bbn is trigger in the first position, led is trigger in second position
+if isempty(trig.anatrig{1})
+    trig0=trig.anatrig{2};
+else
+    trig0=trig.anatrig{1};
+end
+
 
 il=1;
 for trigredxct=1:length(trig0)
@@ -78,7 +89,7 @@ for chct=1:size(eegm,1)
      eegmb(chct,trct,:)   = squeeze(eegm(chct,trct,:))-squeeze(mean(eegm(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
      eegcb(chct,trct,:)   = squeeze(eegc(chct,trct,:))-squeeze(mean(eegc(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
      eegeb(chct,trct,:)   = squeeze(eege(chct,trct,:))-squeeze(mean(eege(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
-     eegbb(chct,trct,:)   = squeeze(eegb(chct,trct,:))-squeeze(mean(eege(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
+     eegbb(chct,trct,:)   = squeeze(eegb(chct,trct,:))-squeeze(mean(eegb(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
  end
 end
 
