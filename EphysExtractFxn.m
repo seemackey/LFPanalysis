@@ -1,4 +1,4 @@
-function [eegcb, eegbb, trig01] = EphysExtractFxn(path)
+function [eegcb, eegbb, trig01, tonefreqs, eegmb] = EphysExtractFxn(path)
 
 %% extraction of lfp, csd, mua
 % this function takes a file path and gets LFP and MUA data out of the file
@@ -39,7 +39,6 @@ else
 end
 
 
-il=1;
 for trigredxct=1:length(trig0)
  trig01(trigredxct)    = round(trig0(trigredxct)./(trig.adrate/newadrate));
 end
@@ -81,8 +80,8 @@ end
 
 
 %% baseline correct
-chct=1;
-trct=1;
+chct=1; % channels
+trct=1; % trials
 
 for chct=1:size(eegm,1)
  for trct=1:size(eegm,2)
@@ -91,6 +90,14 @@ for chct=1:size(eegm,1)
      eegeb(chct,trct,:)   = squeeze(eege(chct,trct,:))-squeeze(mean(eege(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
      eegbb(chct,trct,:)   = squeeze(eegb(chct,trct,:))-squeeze(mean(eegb(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
  end
+end
+
+
+%triggers if there are multiple
+if isempty(trig.ttype(1))
+    tonefreqs=trig.ttype(2);
+else
+    tonefreqs=trig.ttype(1);
 end
 
 end
