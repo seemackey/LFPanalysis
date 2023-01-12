@@ -1,4 +1,4 @@
-function [eegcb, eegbb, trig01, tonefreqs, eegmb] = EphysExtractFxn(path)
+function [eegcb, eegbb, trig01, trigtype, eegmb] = EphysExtractFxn(path,trigch)
 
 %% extraction of lfp, csd, mua
 % this function takes a file path and gets LFP and MUA data out of the file
@@ -22,20 +22,43 @@ fsize = 6;
 xlabelres=5;
 %
 
-%% epoching and filtering
+%% organize data based on input trigger "trigch"
 
 % set timeframe
 time = epoch_tframe(1):1000/newadrate:epoch_tframe(2);
 
 % extract continuous ephys data and triggers
-[cnt_arej, cnte, cntm, cntc, cntu, cntb] = module_cnt05(craw, newadrate, filtere, filteru, filtertype);
-[trig1s,ttype1s, triglength1s, findex2s] = module_trig01(trig, params);
+[~, cnte, cntm, cntc, ~, cntb] = module_cnt05(craw, newadrate, filtere, filteru, filtertype);
+%[trig1s,ttype1s, triglength1s, findex2s] = module_trig01(trig, params);
 
-% bbn is trigger in the first position, led is trigger in second position
-if isempty(trig.anatrig{1})
-    trig0=trig.anatrig{2};
-else
-    trig0=trig.anatrig{1};
+% noise - 1, led (open eyes) - 3, sacc on 4, sacc off 5
+trig0=trig.anatrig{trigch};
+
+
+%triggers if there are multiple, trigch is the one we're selecting
+if trigch==1 % aud stim
+    present_trigidx=trig.ttype{1,trigch}(:,:)>0;
+    trigtype=trig.ttype{1,trigch}(present_trigidx); % aud stim are in cells
+    
+elseif trigch==2
+    present_trigidx=trig.ttype(:,:)>0;
+    trigtype=trig.ttype(present_trigidx); % vis stim are in double ... should be fixed
+    
+elseif trigch==3 % led stim when eyes are open, gotta do something special here
+    
+    trig0_all=trig.anatrig{2}; %ALL (eyes open & close) trigs
+    for i=1:length(trig0)
+       trig_mutual(i)= find(trig0_all==trig0(i)); %gives you the ALL trig number that is in trig0
+    end
+    trigsorttmp=trig.triglength{1,2};
+    trigtype(:,1)=trigsorttmp(trig_mutual); % std/dev when eyes are open % vis stim are in double ... should be fixed
+ 
+    
+elseif trigch==4 % sacc on
+    trigtype=ones(size(trig.anatrig{1,trigch}(:)));% just sticking ones here because we don't have diff sacc types
+    
+elseif trigch==5 % sacc off
+    trigtype=ones(size(trig.anatrig{1,trigch}(:))); % just sticking ones here because we don't have diff sacc types
 end
 
 
@@ -43,7 +66,7 @@ for trigredxct=1:length(trig0)
  trig01(trigredxct)    = round(trig0(trigredxct)./(trig.adrate/newadrate));
 end
 
-
+%% 
 %filter the cnt in 1-100Hz to make nice CSD picts
 %to bandpass filter in the 1.2-2.5Hz range the MUA (cntm)
 n = 2;
@@ -93,11 +116,6 @@ for chct=1:size(eegm,1)
 end
 
 
-%triggers if there are multiple
-if isempty(trig.ttype(1))
-    tonefreqs=trig.ttype(2);
-else
-    tonefreqs=trig.ttype(1);
-end
+
 
 end

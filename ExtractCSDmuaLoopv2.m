@@ -6,22 +6,47 @@ close all
 % make this 1 if you want to see acoustic responses 
 gimmeplots=1;
 
+% select trigger, 1 for aud, 3 for visual, 4 for sacc on, 5 for sacc off
+trigch=1;
+
 %% path info 
 
 %paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu015016\1-bu015016029@os'};
 
-% mac path
-paths = {'/Volumes/Samsung03/bbn/1-bu015016038@os.mat'
-    '/Volumes/Samsung03/bbn/2-bu015016038@os.mat'};
+% mac path example
+% paths = {'/Volumes/Samsung03/bbn/1-bu015016038@os.mat'
+%     '/Volumes/Samsung03/bbn/2-bu015016038@os.mat'};
 
-% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu015016\1-bu015016038@os';
-%    '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu015016\2-bu015016038@os'};
+% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu019020\1-bu019020037@os_eye06_20';
+%    '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu019020\2-bu019020037@os_eye06_20'};
 
-% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010\1-bu009010028@os';
+
+% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu035036\1-bu035036022@os_eye06_20';
+%    '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu035036\2-bu035036022@os_eye06_20'};
+
+% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu001002\1-bu001002020@os.mat';
+%    };
+
+
+% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu035036\1-bu035036021@os_eye06_20';
+%    '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu035036\2-bu035036021@os_eye06_20'};
+
+% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\oldtono\1-bu019020027@os';
+%    '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\oldtono\2-bu019020027@os'};
+
+
+paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010\1-bu009010034@os';
+   '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010\2-bu009010034@os'};
+
+% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu015016\1-bu015016034@os';
 %    '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010\2-bu009010028@os'};
+
 
 % paths = {'C:\Users\cmackey\Documents\MATLAB\1-bu009010034@os';
 %     'C:\Users\cmackey\Documents\MATLAB\2-bu009010034@os'
+%     };
+
+% paths = {'\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu019020\2-bu019020039@os_eye06_20.mat';
 %     };
 
 %% loop through the function to extract data and find outliers
@@ -29,14 +54,14 @@ all=cell(length(paths));
 
 for loopct = 1:1:length(paths)
     
-    [CSD, LFP, trig, trigtype, MUA] =  EphysExtractFxn(paths{loopct,1}); % extract data and stim triggers
+    [CSD, LFP, trig, trigtype, MUA] =  EphysExtractFxn(paths{loopct,1},trigch); % extract data and stim triggers
 
     %unclean data
     all{1,loopct} = num2cell(CSD); 
     all{2,loopct} = num2cell(LFP);
     all{3,loopct} = num2cell(MUA);
     all{4,loopct} = num2cell(trig); % trig times
-    all{5,loopct} = trigtype; % trigger types (e.g. tone freqs, LED types)
+    all{5,loopct} = num2cell(trigtype); % trigger types (e.g. tone freqs, LED types)
     
     [~, ~, ~, ~, outlieridxtmp] = rejectartifacts(CSD, LFP, trig, MUA); % finding artifacts
     
@@ -47,8 +72,8 @@ end
          
 
 %% remove outliers across two sites (only works for two right now)
-outliers = [outliers{:,1};outliers{:,length(paths)}];
-outliersunique = unique(outliers);
+outliers_mutual = [outliers{:,1};outliers{:,length(paths)}];
+outliersunique = unique(outliers_mutual);
 
 for outlierct = 1:length(paths)
   
@@ -56,20 +81,20 @@ for outlierct = 1:length(paths)
     all{2,outlierct}(:,outliersunique,:) = []; 
     all{3,outlierct}(:,outliersunique,:) = []; 
     all{4,outlierct}(:,outliersunique,:) = []; 
-    all{5,outlierct}{1,1}(outliersunique,:) = [];
+    all{5,outlierct}(outliersunique,:) = [];
     
 end
     
 %% Plot CSD, MUA, tuning
-chmua1=13;
-chmua2=14;
+chmua1=8;
+chmua2=8;
 tpmua1=round(length(MUA(1,1,:))/2); %using halfway point because I've been epoching 250 ms before stim and 250 after
 tpmua2=length(MUA(1,1,:));
 
 
 site1LFP = cell2mat(all{2,1}(:,:,:)); %using LFP for site 1 (mgb)
 site2CSD = cell2mat(all{1,length(paths)}(:,:,:)); % 2nd site, ctx
-MUA = cell2mat(all{3,1}(:,:,:)); % MUA from first site
+MUA = cell2mat(all{3,1}(:,:,:)); % MUA from second site
 trigtype = cell2mat(all{5,1}(:,:)); % 
 
 if gimmeplots == 1
@@ -89,11 +114,11 @@ if gimmeplots == 1
         colormap(figureax1a,flipud(jet))
     end
     
-    figure
-    axpos=[0.1 0.1 0.8 0.8];
-    figureax1a=axes('Position',axpos);
-    [cax2] = csd_maker_no_subplot07(squeeze(mean(MUA(:,:,:),2)),(-250:2:250),0,[-10 250],[0 0],[],axpos,figureax1a);
-    colormap(figureax1a,flipud(jet))
+figure
+axpos=[0.1 0.1 0.8 0.8];
+figureax1a=axes('Position',axpos);
+[cax2] = csd_maker_no_subplot07(squeeze(mean(MUA(:,:,:),2)),(-250:2:250),0,[-10 250],[0 0],[],axpos,figureax1a);
+colormap(figureax1a,hot)
     
     % now check tuning
     MUAavg = mean(mean(MUA(chmua1:chmua2,:,tpmua1:tpmua2),1),3)'; % average MUA across chs and whole epoch
@@ -118,6 +143,58 @@ if gimmeplots == 1
     
 end
 
+%% calculate confidence intervals of MUA and significance of response
+numchans = length(all{1,1}(:,1,1));
+numtrs = length(all{1,1}(1,:,1));
+numtps = length(squeeze(all{1,1}(1,1,:)));
+ci_stp = 1; % step size, multiply by 2 to get milliseconds
+numboots = 1000; % number of resamples
+
+% loop through channels
+for ci_ch_ct = 1:1:numchans
+    for ci_tp = 1:ci_stp:tpmua2 % loop through time points
+        MUAtmp = squeeze(MUA(ci_ch_ct,:,ci_tp)); % get the data from a time point
+        ci_tmp = bootci(numboots,@mean,MUAtmp'); % get bootstrap derived CIs
+        cimean(ci_ch_ct,ci_tp) = mean(MUAtmp); % record mean
+        cilo(ci_ch_ct,ci_tp) = ci_tmp(1,1); % lower CI
+        cihi(ci_ch_ct,ci_tp) = ci_tmp(2,1); % upper CI
+        
+        if cilo(ci_ch_ct,ci_tp)>0
+            sigtimes(ci_ch_ct,ci_tp) = 1;
+        elseif cihi(ci_ch_ct,ci_tp)<0
+            sigtimes(ci_ch_ct,ci_tp) = -1;
+        else
+            sigtimes(ci_ch_ct,ci_tp) = 0;
+        end
+    end
+end
+
+figure
+plotstp = ci_stp*2;
+for ciplotct = 1:1:numchans
+    subplot(numchans,1,ciplotct)
+    plot(-250:plotstp:tpmua2,cihi(ciplotct,1:ci_stp:tpmua2))
+    hold on
+    plot(-250:plotstp:tpmua2,cilo(ciplotct,1:ci_stp:tpmua2))
+    hold on
+    plot(-250:plotstp:tpmua2,cimean(ciplotct,1:ci_stp:tpmua2))
+end
+
+figure
+plotstp = ci_stp*2;
+increases=[0:0.7:numchans*0.7];
+for ciplotct = 1:1:numchans
+    
+    plot(-250:plotstp:tpmua2,cihi(ciplotct,1:ci_stp:tpmua2)+increases(ciplotct),'r')
+    hold on
+    plot(-250:plotstp:tpmua2,cilo(ciplotct,1:ci_stp:tpmua2)+increases(ciplotct),'r')
+    hold on
+    plot(-250:plotstp:tpmua2,cimean(ciplotct,1:ci_stp:tpmua2)+increases(ciplotct),'b')
+    hold on
+    plot(-250:plotstp:tpmua2,(zeros(length(-250:plotstp:tpmua2))+increases(ciplotct)),'k')
+    
+end
+ylim([-0.5,15])
 
 %% Cross correlation analysis
 % now we have multiple simultaneous recordings and want to see how they are
@@ -178,15 +255,58 @@ for chanct = 1:length(chs1)
     
 end
 
+%% cross correlate all channel combos for avg resp
 
+corrs = {zeros(length(chs1))};
+xlags = {zeros(length(chs1))};
+negpeaks = zeros(length(chs1));
+negpeaklags = zeros(length(chs1));
+pospeaks = zeros(length(chs1));
+pospeaklags = zeros(length(chs1));
+
+
+for chanct = 1:length(chs1)
+
+       
+        xtmp = squeeze(mean(site1LFP(chs1(chanct),:,:),2)); % average resp across trials
+        ytmp = squeeze(mean(site2CSD(chs2(chanct),:,:),2)); % same ch combo from second site
+        [r,lags] = xcorr(xtmp,ytmp,'coeff'); %cross correlation
+        corrs{chanct,1} = r;
+        xlags{chanct,1} = lags';
+        
+        
+        
+        % recording the peaks in the xcorrelogram
+        if min(r)<0
+            negpeaks(chanct) = min(r(r<0));
+            negpeaklags(chanct) = lags(r==negpeaks(chanct));
+        else
+            negpeaks(chanct) = NaN;
+            negpeaklags(chanct) = NaN;
+        end
+        
+        if max(r)>0
+            pospeaks(chanct) = max(r(r>0));
+            pospeaklags(chanct) = lags(r==pospeaks(chanct));
+        else
+            pospeaks(chanct) = NaN;
+            pospeaklags(chanct) = NaN;
+        end
+        
+end
+   
 %% plotting x corr
 
 % channels of interest that get sorted/plotted
-chcombo1 = 218;
-chcombo2 = 230;
+chcombo1 = 52;
+chcombo2 = 161;
+chcombo3 = 62;
+chcombo4 = 167;
 
 % plot a few trials' cross correlations
 figure
+legend1=('MGD -> supra. A1');
+legend2=('MGV -> gran. A1');
 for sorttrs = 20:1:22
     
     subplot(2,3,sorttrs-19)
@@ -197,7 +317,7 @@ for sorttrs = 20:1:22
     ylabel('Cross Corr. Coeff')
     xlabel('Cross Corr. lag Re: noise onset(ms)')
     title(['MGB -> A1 cross corr. Trial #', sprintf(num2str(sorttrs))])
-    legend('MGM -> supra. A1','MGM -> infra. A1')
+    legend(legend1,legend2)
     set(gca,'fontsize', 16) 
     
 end
@@ -208,7 +328,7 @@ hold on
 histogram(negpeaklags(:,chcombo2),'BinWidth',10,'Normalization','pdf')
 xlabel('X corr peak lag')
 ylabel('Proportion')
-legend('MGM -> supra A1','MGM -> infra A1')
+legend(legend1,legend2)
 title('Negative X corr peaks')
 set(gca,'fontsize', 16) 
 
@@ -220,7 +340,42 @@ hold on
 histogram(pospeaklags(:,chcombo2),'BinWidth',10,'Normalization','pdf') 
 xlabel('X corr peak lag')
 ylabel('Proportion')
-legend('MGM -> supra A1','MGM -> infra A1')
+legend(legend1,legend2)
 title('Positive X corr peaks')
 
 set(gca,'fontsize', 16) 
+
+%% plotting x corr of avg resp
+figure
+subplot(1,2,1)
+plot(xlags{chcombo1}(:),corrs{chcombo1}(:))
+hold on
+plot(xlags{chcombo2}(:),corrs{chcombo2}(:))
+ylim([-0.4,0.8])
+ylabel('Cross Corr. Coeff')
+xlabel('Cross Corr. lag Re: noise onset(ms)')
+title(['MGB -> A1 cross corr.'])
+set(gca,'fontsize', 16)
+legend('MGD -> supra. A1', 'MGV -> gran. A1')
+
+subplot(1,2,2)
+plot(xlags{chcombo3}(:),corrs{chcombo3}(:))
+hold on
+plot(xlags{chcombo4}(:),corrs{chcombo4}(:))
+ylim([-0.4,0.8])
+ylabel('Cross Corr. Coeff')
+xlabel('Cross Corr. lag Re: noise onset(ms)')
+title(['MGB -> A1 cross corr.'])
+set(gca,'fontsize', 16)
+legend('MGD -> infra. A1', 'MGV -> infra. A1')
+
+
+%% stats
+xpos=pospeaklags(:,chcombo1);
+ypos=pospeaklags(:,chcombo2);
+xneg=negpeaklags(:,chcombo1);
+yneg=negpeaklags(:,chcombo2);
+
+% test for difference in distributions
+[k_neg,p_neg] = kstest2(xneg,yneg)
+[k_pos,p_pos] = kstest2(xpos,ypos)
