@@ -120,7 +120,6 @@ filter_hg       = [70 160];
 % [filenamesout2,filenames_nowave] =  snr_wavelet08(directory3,directory4,filenames, wmethod, frqrange,  epoch_tframe_orig, bool);
 % toc
 
-bool_images         = 1;
 
 downsample_adrate   = 1;
 
@@ -1112,7 +1111,7 @@ for filecik=1:length(filenames)
     %%%%%%%%%
     %%%%%%%%% images
     
-    if bool_images == 1
+    if bool.images == 1
         
         mapvars_po2_eeg ={};
         mapvars_itc2_eeg ={};

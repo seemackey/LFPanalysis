@@ -3,11 +3,11 @@ function [eyedata] = snr_eye06all_old(directory,det_met)
 
 %%%% examples:
 
-% directory = 'E:\dyneyen2\bbn\BBN_eo\';
+% directory = '\\NKI-LAKATOSLAB\lakatoslab_alpha\Buster\contproc\bu009010';
 % det_met   = [2 0];
 % [eyedata] = snr_eye06all_old(directory, det_met);
 
-filenames = {};
+filenames = {'1-bu009010028@os'};
 
 tic
 

@@ -5,7 +5,7 @@ clear
 close all
 
 %% set directory
-myDir = '/Volumes/Samsung03/A1_LED files'; %gets directory
+myDir = 'G:\A1_LED files'; %gets directory
 myFiles = dir(fullfile(myDir,'*.mat')); %gets all wav files in struct
 
 
@@ -39,6 +39,14 @@ for loopct = 1:length(myFiles)
 
     MUA = cell2mat(all{3,1}(:,:,:)); % MUA 
     trigtype = cell2mat(all{5,1}(:,:)); 
+    
+    for i=1:size(MUA,1)
+        for iii=1:size(MUA,2)
+            for times_smooth=1:2
+             MUA(i,iii,:)=smooth(squeeze(MUA(i,iii,:)),'moving',5);%smoothed data
+            end
+        end
+    end
     
 %% calculate confidence intervals of MUA and significance of response
     numchans = length(all{1,1}(:,1,1));
