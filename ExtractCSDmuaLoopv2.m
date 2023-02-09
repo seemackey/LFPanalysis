@@ -14,7 +14,7 @@ trigch=1;
 %  paths = {'D:\oldtono\contproc\1-gt030031021@os_eye06_30'
 % 'D:\oldtono\contproc\1-gt030031021@os_eye06_30'};
 
- paths = {'G:\jiggle\2-bu037038018@os.mat'};
+ paths = {'F:\dyneyep\jitter\contproc\1-rb031032026@os_eye06_20.mat'};
 
 
 % mac path example
@@ -103,7 +103,7 @@ tpmua1=round(length(MUA(1,1,:))/2); %using halfway point because I've been epoch
 tpmua2=length(MUA(1,1,:));
 
 
-site1LFP = cell2mat(all{2,1}(:,:,:)); %using LFP for site 1 (mgb)
+%site1LFP = cell2mat(all{2,1}(:,:,:)); %using LFP for site 1 (mgb)
 site2CSD = cell2mat(all{1,length(paths)}(:,:,:)); % 2nd site, ctx
 MUA = cell2mat(all{3,1}(:,:,:)); % MUA from second site
 trigtype = cell2mat(all{5,1}(:,:)); % 
@@ -111,25 +111,25 @@ trigtype = cell2mat(all{5,1}(:,:)); %
 if gimmeplots == 1
     
     % check LFPs
+%     figure
+%     axpos=[0.1 0.1 0.8 0.8];
+%     figureax1a=axes('Position',axpos);
+%     [cax2] = csd_maker_no_subplot07(squeeze(mean(site1LFP(:,:,:),2)),(-250:2:250),1,[-50 250],[0 0],[],axpos,figureax1a);
+%     colormap(figureax1a,flipud(jet))
+    
+
     figure
     axpos=[0.1 0.1 0.8 0.8];
     figureax1a=axes('Position',axpos);
-    [cax2] = csd_maker_no_subplot07(squeeze(mean(site1LFP(:,:,:),2)),(-250:2:250),1,[-50 250],[0 0],[],axpos,figureax1a);
+    [cax2] = csd_maker_no_subplot07(squeeze(mean(site2CSD(:,:,:),2)),(-250:2:250),1,[-50 250],[0 0],[],axpos,figureax1a);
     colormap(figureax1a,flipud(jet))
+
     
-    if length(paths)>1
-        figure
-        axpos=[0.1 0.1 0.8 0.8];
-        figureax1a=axes('Position',axpos);
-        [cax2] = csd_maker_no_subplot07(squeeze(mean(site2CSD(:,:,:),2)),(-250:2:250),1,[-50 250],[0 0],[],axpos,figureax1a);
-        colormap(figureax1a,flipud(jet))
-    end
-    
-figure
-axpos=[0.1 0.1 0.8 0.8];
-figureax1a=axes('Position',axpos);
-[cax2] = csd_maker_no_subplot07(squeeze(mean(MUA(:,:,:),2)),(-250:2:250),0,[-50 250],[0 0],[],axpos,figureax1a);
-colormap(figureax1a,hot)
+    figure
+    axpos=[0.1 0.1 0.8 0.8];
+    figureax1a=axes('Position',axpos);
+    [cax2] = csd_maker_no_subplot07(squeeze(mean(MUA(:,:,:),2)),(-250:2:250),0,[-50 250],[0 0],[],axpos,figureax1a);
+    colormap(figureax1a,hot)
     
     % now check tuning
     MUAavg = mean(mean(MUA(chmua1:chmua2,:,tpmua1:tpmua2),1),3)'; % average MUA across chs and whole epoch

@@ -36,9 +36,17 @@ trig0=trig.anatrig{trigch};
 
 
 %triggers if there are multiple, trigch is the one we're selecting
-if trigch==1 % aud stim
-    present_trigidx=trig.ttype{1,trigch}(:,:)>0;
-    trigtype=trig.ttype{1,trigch}(present_trigidx); % aud stim are in cells
+
+
+if trigch==1  % aud stim is stored as cell type SOMETIMES so we need a lot of ifs
+    
+    if iscell(trig.ttype)
+        present_trigidx=trig.ttype{1,trigch}(:,:)>0; % places where there was a trigger
+        trigtype=trig.ttype{1,trigch}(present_trigidx); % aud stim are in cells usually
+    else
+        present_trigidx=trig.ttype(:,:)>0;
+        trigtype=trig.ttype(present_trigidx); % vis stim are in double ... should be fixed
+    end
     
 elseif trigch==2
     present_trigidx=trig.ttype(:,:)>0;

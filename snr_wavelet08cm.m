@@ -1,4 +1,4 @@
-function [filenamesout2,filenames_nowave] =  snr_wavelet08(directory3,directory4,filenames, wmethod, frqrange,  epoch_tframe_orig, bool)
+function [filenamesout2,filenames_nowave] =  snr_wavelet08(directory3,directory4,filenames, wmethod, frqrange,  epoch_tframe_orig, bool,filestart)
 
 selch_ai        = [1:4];
 selch_lfp       = [1:4];
@@ -167,7 +167,7 @@ waitb           = waitbar(0);
 
 tic
 
-for filecik=863:length(filenames)
+for filecik=filestart:length(filenames)
     
     wraw=[];
     wlfp=[];
