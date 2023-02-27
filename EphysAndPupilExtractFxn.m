@@ -122,11 +122,17 @@ trct=1; % trials
          eegcb(chct,trct,:)   = squeeze(eegc(chct,trct,:))-squeeze(mean(eegc(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
          eegeb(chct,trct,:)   = squeeze(eege(chct,trct,:))-squeeze(mean(eege(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
          eegbb(chct,trct,:)   = squeeze(eegb(chct,trct,:))-squeeze(mean(eegb(chct,trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3));
-         pupepdb(trct,:) = pupepd(trct,:)-mean(pupepd(trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3);
+         %pupepdb(trct,:) = pupepd(trct,:)-mean(pupepd(trct,max(find(time<=timeframe_baseline(1))):max(find(time<=timeframe_baseline(2)))),3);
         end
     end
+    
+    
+%% baseline correct pupil
 
-
+bslidx = time<=max(timeframe_baseline);
+stimidx = time>=max(timeframe_baseline);
+bslmean = mean(pupepd(:,bslidx),2);
+pupepdb = pupepd(:,:)-bslmean;
 
 
 end
