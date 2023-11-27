@@ -5,16 +5,15 @@
 %load(path);
 
 %% 
-presenttrigs = trig.digtrig>0;
-ttimes = trig.digtrig(presenttrigs);
-ttimes = ttimes*2; % convert to ms, AD rate was 500
+function [meansoa,sdsoa] = jiggle_soacalc(wraw,trig)
+    presenttrigs = trig.digtrig>0; 
+    ttimes = trig.digtrig(presenttrigs);
+    ttimes = ttimes*(1000/wraw.adrate);
+    soadiff=diff(ttimes);
+    soa=soadiff-(1000/wraw.reprate);
 
-for trigct = 1:1:length(ttimes)
-    
-    soa(trigct) = ttimes(trigct)-((1000/wraw.reprate)*(trigct));
-    
+
+    %histogram(soa,'BinWidth',10);
+    meansoa = mean(soa);
+    sdsoa = std(soa);
 end
-
-histogram(soa,'BinWidth',30)
-meansoa = mean(soa)
-sdsoa = std(soa)

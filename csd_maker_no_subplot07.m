@@ -57,6 +57,7 @@ surface(Xi-delta/2,Yi-delta/2,zeros(size(Zi)),Zi,'EdgeColor','none','FaceColor',
 
 ax = gca;
 
+
 if muavg==0 || muavg==4
     colormap(subpl,hot)
     if max(max(csd))>0
@@ -91,11 +92,11 @@ else
 end
 
 
-% if isempty(caxset)
-%     
-% else
-%     caxis(caxset)
-% end
+if isempty(caxset)
+    
+else
+    caxis(caxset)
+end
 
 cax=caxis;
 
@@ -106,13 +107,24 @@ end
 colormap(ax, cmap);
 
 
-set(gca,'Position',axpos)
+% set(gca,'Position',axpos)
+% handles.mapax = axes( 'Position',axpos,...
+%         'Color','none',...
+%         'XColor','k','YColor','k',...
+%         'XLim', [time(ti(1)) time(ti(2))], 'YLim',[1 size(csd,1)],...
+%         'Ytick',[0:0.1:size(csd,1)/10],'YDir', 'reverse',...
+%         'Fontsize',16);
+%         H=gca;
+%         H.LineWidth=1.5; %axis thickness
+        
+        set(gca,'Position',axpos)
 handles.mapax = axes( 'Position',axpos,...
         'Color','none',...
         'XColor','k','YColor','k',...
         'XLim', [time(ti(1)) time(ti(2))], 'YLim',[1 size(csd,1)],...
-        'Ytick',[1:size(csd,1)],'YDir', 'reverse',...
-        'Fontsize',16);
+        'Ytick',[0:size(csd,1)],'YDir', 'reverse',...
+        'Fontsize',14);
         H=gca;
-        H.LineWidth=1.5; %axis thickness
+        H.LineWidth=0.5; %axis thickness
+        
 hold on        

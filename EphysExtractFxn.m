@@ -1,4 +1,4 @@
-function [eegcb, eegbb, trig01, trigtype, eegmb] = EphysExtractFxn(path,trigch)
+function [eegcb, eegbb, trig01, trigtype, eegmb,epoch_tframe] = EphysExtractFxn(path,trigch)
 
 %% extraction of lfp, csd, mua
 % this function takes a file path and gets LFP and MUA data out of the file
@@ -12,9 +12,9 @@ fname = path;
 
 
 %% INPUTS (filtering, epoch timing etc.)%
-timeframe_baseline              = [-200 0];
-epoch_tframe            = [-250 250];  
-newadrate =500;
+timeframe_baseline              = [-50 0];
+epoch_tframe            = [-50 300];  
+newadrate =1000;
 filtere = [0.5 300];%LFP
 filteru = [300 5000];%MUA
 filtertype=1;
@@ -45,7 +45,7 @@ if trigch==1  % aud stim is stored as cell type SOMETIMES so we need a lot of if
         trigtype=trig.ttype{1,trigch}(present_trigidx); % aud stim are in cells usually
     else
         present_trigidx=trig.ttype(:,:)>0;
-        trigtype=trig.ttype(present_trigidx); % vis stim are in double ... should be fixed
+        trigtype=trig.ttype(present_trigidx); 
     end
     
 elseif trigch==2
@@ -74,6 +74,14 @@ for trigredxct=1:length(trig0)
  trig01(trigredxct)    = round(trig0(trigredxct)./(trig.adrate/newadrate));
 end
 
+% if trig type doesn't match trig0 for some reason (happens..need to figure
+% it out
+% Find the indices in trig01 that don't exceed the size of cntm
+valid_indices = trig01 <= size(cntm, 2);
+
+% Trim trig01 to keep only the valid indices
+trig01 = trig01(valid_indices);
+
 %% 
 %filter the cnt in 1-100Hz to make nice CSD picts
 %to bandpass filter in the 1.2-2.5Hz range the MUA (cntm)
@@ -89,10 +97,10 @@ cntb_ff = zeros(size(cnte));
 
 i=1;
 for i=1:size(cntc,1) %this is for the electrode chs
- cntc_ff(i,:)=filtfilt(b,a,cntc(i,:)); %creates a new variable which contains filtered data
- cntm_ff(i,:)=filtfilt(b,a,cntm(i,:));
- cnte_ff(i,:)=filtfilt(b,a,cnte(i,:));
- cntb_ff(i,:)=filtfilt(b,a,cntb(i,:));
+     cntc_ff(i,:)=filtfilt(b,a,cntc(i,:)); %creates a new variable which contains filtered data
+     cntm_ff(i,:)=filtfilt(b,a,cntm(i,:));
+     cnte_ff(i,:)=filtfilt(b,a,cnte(i,:));
+     cntb_ff(i,:)=filtfilt(b,a,cntb(i,:));
 end
 
 %epoching
@@ -102,12 +110,21 @@ x2 = round(epoch_tframe(2)*(newadrate/1000));
 i=1;
 for i=1:length(trig01)
     
- eegm(:,i,:)=cntm_ff(:,trig01(i)+x1:trig01(i)+x2);%epoching the mua
- eegc(:,i,:)=cntc_ff(:,trig01(i)+x1:trig01(i)+x2);%epoching the csd
+ eegm(:,i,:)=cntm(:,trig01(i)+x1:trig01(i)+x2);%epoching the mua
+ eegc(:,i,:)=cntc(:,trig01(i)+x1:trig01(i)+x2);%epoching the csd
  eege(:,i,:)=cnte_ff(:,trig01(i)+x1:trig01(i)+x2);% same for lfp
- eegb(:,i,:)=cntb_ff(:,trig01(i)+x1:trig01(i)+x2);% same for bipolar lfp
+ eegb(:,i,:)=cntb(:,trig01(i)+x1:trig01(i)+x2);% same for bipolar lfp
  
 end
+
+% for i=1:length(trig01)
+%     
+%  eegm(:,i,:)=cntm(:,trig01(i)+x1:trig01(i)+x2);%epoching the mua
+%  eegc(:,i,:)=cntc(:,trig01(i)+x1:trig01(i)+x2);%epoching the csd
+%  eege(:,i,:)=cnte(:,trig01(i)+x1:trig01(i)+x2);% same for lfp
+%  eegb(:,i,:)=cntb(:,trig01(i)+x1:trig01(i)+x2);% same for bipolar lfp
+%  
+% end
 
 
 %% baseline correct

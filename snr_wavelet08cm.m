@@ -1,4 +1,5 @@
-function [filenamesout2,filenames_nowave] =  snr_wavelet08(directory3,directory4,filenames, wmethod, frqrange,  epoch_tframe_orig, bool,filestart)
+
+function [filenamesout2,filenames_nowave] =  snr_wavelet08cm(directory3,directory4,filenames, wmethod, frqrange,  epoch_tframe_orig, bool,filestart)
 
 selch_ai        = [1:4];
 selch_lfp       = [1:4];
@@ -1122,6 +1123,8 @@ for filecik=filestart:length(filenames)
         axposes1{4} = [0.03 0.62 0.21 0.32;  0.05 0.47 0.94 0.105; 0.28 0.62 0.21 0.32;  0.05 0.33 0.94 0.105; 0.53 0.62 0.21 0.32; 0.05 0.19 0.94 0.105; 0.78 0.62 0.21 0.32; 0.05 0.05 0.94 0.105];
         axposes1{5} = [0.03 0.62 0.21 0.32;  0.05 0.47 0.94 0.105; 0.28 0.62 0.21 0.32;  0.05 0.33 0.94 0.105; 0.53 0.62 0.21 0.32; 0.05 0.19 0.94 0.105; 0.78 0.62 0.21 0.32; 0.05 0.05 0.94 0.105];
         
+        
+        % first get all power (po) and itc values into cells 
         if ~isempty(wraw.adrate)
             
             imagecount = 0;
@@ -1220,6 +1223,10 @@ for filecik=filestart:length(filenames)
             
             
             ic1 = 0;
+            
+            
+            % loop through diff measures (lfp, csd, mua etc.) and plot
+            % power and itc
             for icik = 1:imagecount
                 
                 
@@ -1229,6 +1236,7 @@ for filecik=filestart:length(filenames)
                 axpos=axposes1{imagecount}(ic1,:);
                 figureax1a=axes('Position',axpos);
                 
+
                 mapvar = mapvars_po1{icik};
                 surface(1:size(mapvar,2),1:size(mapvar,1),zeros(size(mapvar)),mapvar,'EdgeColor','none','FaceColor','interp');
                 set(gca,'xcolor',[0 0 0],'ycolor',[0 0 0],'color',[1 1 1])
@@ -1255,13 +1263,16 @@ for filecik=filestart:length(filenames)
                 title([ 'time-frequency ' ilabels{icik} ',   cax: ' num2str(cax3(1)) ' - ' num2str(cax3(2))],'FontSize',8)
             end
             
+            % save fig and print fig UNDER CONSTRUCTION %%%%%%%%%%%%%%%%
             fname = filenamesout2{filecik}(1:end-4);
             axes('Position',[0 0.98 1 0.2],'Visible','off');
             text(0.5,0,[fname ''],'FontSize',11,'color',[0 0 0],'HorizontalAlignment','center','interpreter','none')
             
             print ('-djpeg', '-r1200', [directory4 'w01_' filenamesout2{filecik}(1:end-4) '.jpg']);
-            close all
             
+            savefig(fname)
+            close all
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
             if imagecount2>0
                 
