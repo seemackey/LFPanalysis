@@ -1,4 +1,4 @@
-function [maximum,gaussianFit,freqs] = AttnTuningFitFxn(all,selectedChannel,selectedTimeWindow,maximum_previous,subplotArgs,plotcolor)
+function [maximum,gaussianFit,freqs,averageResponses] = AttnTuningFitFxn(all,selectedChannel,selectedTimeWindow,maximum_previous,subplotArgs,plotcolor)
 %% inputs %%
 % all, which contains all data from the extract csd loop %
 % for now, "all" needs to be organized in a certain order specified in the
@@ -66,14 +66,30 @@ function [maximum,gaussianFit,freqs] = AttnTuningFitFxn(all,selectedChannel,sele
             maximum = 0; % we didn't use maximum, we used max prev.
         end
         
-        % Fit a Gaussian function
-        gaussianFit = fit(freqs', normalizedResponses', 'gauss1');
+
+        
+        % Define the Gaussian equation
+        gaussianEq = fittype('a * exp(-(x - b)^2 / (2 * c^2))', 'independent', 'x', 'dependent', 'y', 'coefficients', {'a', 'b', 'c'});
+
+        % Provide initial parameter guesses
+        initialParams = [0.1, 4000, 100];
+
+        % Specify upper and lower bounds
+        lowerBounds = [0.2, 200, 100];  % Lower bounds for [a, b, c]
+        upperBounds = [2, 34000, Inf];  % Upper bounds for [a, b, c]
+
+        % Fit the Gaussian with bounds
+        gaussianFit = fit(freqs', normalizedResponses', gaussianEq, 'StartPoint', initialParams, 'Lower', lowerBounds, 'Upper', upperBounds);
+
+        
+        % Fit a Gaussian function 
+ %       gaussianFit = fit(freqs', normalizedResponses', 'gauss1');
 
         % Display fit parameters
-        fprintf('Amplitude: %.3f\n', gaussianFit.a1);
-        fprintf('Mean: %.3f\n', gaussianFit.b1);
-        fprintf('Width: %.3f\n', gaussianFit.c1 / sqrt(2));
-        fprintf('Asymptote: %.3f\n', gaussianFit.a1 + gaussianFit.c1 / sqrt(2));
+%         fprintf('Amplitude: %.3f\n', gaussianFit.a1);
+%         fprintf('Mean: %.3f\n', gaussianFit.b1);
+%         fprintf('Width: %.3f\n', gaussianFit.c1 / sqrt(2));
+%         fprintf('Asymptote: %.3f\n', gaussianFit.a1 + gaussianFit.c1 / sqrt(2));
 
       
         % Plot the normalized responses and Gaussian fit
@@ -82,7 +98,7 @@ function [maximum,gaussianFit,freqs] = AttnTuningFitFxn(all,selectedChannel,sele
         subplot(subplotArgs(1), subplotArgs(2), subplotArgs(3)+1);
 %         plot(freqs, normalizedResponses, 'o', 'Color', plotcolor);
 %         hold on;
-        plot(gaussianFit, freqs, normalizedResponses);
+        plot(gaussianFit, freqs, normalizedResponses,'o');
         h = get(gca, 'Children');
         set(h(1:2), 'Color', plotcolor);
         set(gca, 'XScale', 'log');  % Set x-axis to log scale
