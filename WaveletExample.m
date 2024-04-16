@@ -1,0 +1,43 @@
+function [power,phase] = 
+
+%%  Wavelet Transform, average power in a band, phase
+
+% Initialization and Load Data
+%clear; close all;
+%load('path_to_your_time_series_data.mat'); % Load your time-domain signal data here
+
+% Parameters
+Fs = 1000; % Sampling frequency in Hz (adjust according to your data)
+frequencyRange = [0.5, 256]; % Full range of interest
+targetBand = [8, 14]; % Target frequency band
+
+% Compute the Continuous Wavelet Transform
+[wt, f] = cwt(data, Fs, 'FrequencyLimits', frequencyRange);
+
+% Isolate the target frequency band (8-14 Hz)
+targetIdx = f >= targetBand(1) & f <= targetBand(2);
+wtTargetBand = wt(targetIdx, :);
+
+% sum along freq dimension
+wtTargetBandSum = sum(wtTargetBand,1);
+
+% Compute amplitude and phase for the target band
+amplitude = abs(wtTargetBandSum);
+phase = angle(wtTargetBandSum);
+
+%% Save the new wavelet data for further analysis
+%save('path_to_save_new_wavelet_data.mat', 'amplitude', 'phase', 'f', 'wtTargetBand');
+
+%% Load Processed Data
+%load('path_to_save_new_wavelet_data.mat');
+
+% Example Plot: Average Amplitude Over Time in the Target Band
+time = (1:length(data)) / Fs; % Time vector for plotting
+meanAmplitude = mean(amplitude, 1); % Average amplitude over all target frequencies
+
+figure;
+plot(time, meanAmplitude);
+xlabel('Time (s)');
+ylabel('Average Amplitude');
+title('Average Amplitude in the 8-14 Hz Band Over Time');
+

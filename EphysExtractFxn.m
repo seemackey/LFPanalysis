@@ -1,4 +1,4 @@
-function [eegcb, eegbb, trig01, trigtype, eegmb,epoch_tframe] = EphysExtractFxn(path,trigch)
+function [eegcb, eegbb, trig01, trigtype, eegmb,epoch_tframe,std_freq] = EphysExtractFxn(path,trigch)
 
 %% extraction of lfp, csd, mua
 % this function takes a file path and gets LFP and MUA data out of the file
@@ -13,7 +13,7 @@ fname = path;
 
 %% INPUTS (filtering, epoch timing etc.)%
 timeframe_baseline              = [-50 0];
-epoch_tframe            = [-50 300];  
+epoch_tframe            = [-50 200];  
 newadrate =1000;
 filtere = [0.5 300];%LFP
 filteru = [300 5000];%MUA
@@ -29,6 +29,8 @@ time = epoch_tframe(1):1000/newadrate:epoch_tframe(2);
 
 % extract continuous ephys data and triggers
 [~, cnte, cntm, cntc, ~, cntb] = module_cnt05(craw, newadrate, filtere, filteru, filtertype);
+% extract continuous ephys data and triggers
+[~, cnte, cntm, cntc, ~, cntb] = module_cnt05(craw, 1000, [0.5 300], [300 5000], 1);
 %[trig1s,ttype1s, triglength1s, findex2s] = module_trig01(trig, params);
 
 % noise - 1, led (open eyes) - 3, sacc on 4, sacc off 5
@@ -82,6 +84,13 @@ valid_indices = trig01 <= size(cntm, 2);
 % Trim trig01 to keep only the valid indices
 trig01 = trig01(valid_indices);
 
+% tone frequency HARD CODED FOR NEUROSCAN FILES
+if params.filedat(16) > 100 && params.filedat(16) < 40000
+    std_freq = params.filedat(16);
+else
+    disp('tone freq not found, is this not a neuroscan file?')
+    std_freq = 0;
+end
 %% 
 %filter the cnt in 1-100Hz to make nice CSD picts
 %to bandpass filter in the 1.2-2.5Hz range the MUA (cntm)
@@ -96,12 +105,12 @@ cnte_ff = zeros(size(cnte));
 cntb_ff = zeros(size(cnte));
 
 i=1;
-for i=1:size(cntc,1) %this is for the electrode chs
-     cntc_ff(i,:)=filtfilt(b,a,cntc(i,:)); %creates a new variable which contains filtered data
-     cntm_ff(i,:)=filtfilt(b,a,cntm(i,:));
-     cnte_ff(i,:)=filtfilt(b,a,cnte(i,:));
-     cntb_ff(i,:)=filtfilt(b,a,cntb(i,:));
-end
+% for i=1:size(cntc,1) %this is for the electrode chs
+%      cntc_ff(i,:)=filtfilt(b,a,cntc(i,:)); %creates a new variable which contains filtered data
+%      cntm_ff(i,:)=filtfilt(b,a,cntm(i,:));
+%      cnte_ff(i,:)=filtfilt(b,a,cnte(i,:));
+%      cntb_ff(i,:)=filtfilt(b,a,cntb(i,:));
+% end
 
 %epoching
 x1 = round(epoch_tframe(1)*(newadrate/1000));
@@ -112,7 +121,7 @@ for i=1:length(trig01)
     
  eegm(:,i,:)=cntm(:,trig01(i)+x1:trig01(i)+x2);%epoching the mua
  eegc(:,i,:)=cntc(:,trig01(i)+x1:trig01(i)+x2);%epoching the csd
- eege(:,i,:)=cnte_ff(:,trig01(i)+x1:trig01(i)+x2);% same for lfp
+ eege(:,i,:)=cnte(:,trig01(i)+x1:trig01(i)+x2);% same for lfp
  eegb(:,i,:)=cntb(:,trig01(i)+x1:trig01(i)+x2);% same for bipolar lfp
  
 end

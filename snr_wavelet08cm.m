@@ -775,7 +775,7 @@ for filecik=filestart:length(filenames)
         
         
         
-        [speaks.peaks,speaks.surfcohere,speaks.ccoef,speaks.params,speaks.posall] = module_spectral_peaks02(wraw, wlfp);
+        %[speaks.peaks,speaks.surfcohere,speaks.ccoef,speaks.params,speaks.posall] = module_spectral_peaks02(wraw, wlfp);
         
         if bool.downsample == 1
             wraw.cntc_ph = [];
@@ -1105,7 +1105,7 @@ for filecik=filestart:length(filenames)
     
     params.bool = bool;
     
-    save([directory4 filenamesout2{filecik}], 'wraw','wai','wlfp','trig','otherdata','params','speaks','-mat','-v7.3')
+    save([directory4 filenamesout2{filecik}], 'wraw','wai','wlfp','trig','otherdata','params','-mat','-v7.3') % removed save of speaks 2024, chase
     
     
     

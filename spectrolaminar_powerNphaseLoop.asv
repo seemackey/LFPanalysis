@@ -1,0 +1,190 @@
+% get power and phase of recordings for spectrolaminar project
+% chase m 2024
+
+%% Initialization
+tic;
+clear;
+close all;
+
+%% Set directory and parameters
+mydir = 'E:\spectrolaminar\AttnData\core\cont\'; % Specify directory
+myfiles = dir(fullfile(mydir,'*@os*.mat')); % Get all files in struct
+
+Fs = 1000; % Sampling frequency in Hz
+frequencyRange = [1, 24]; % Full range of interest
+targetBand = [8, 14]; % Target frequency band
+pre_stim_ms = -300; % epoch start relative to trigger
+post_stim_ms = -100; % epoch end relative to trigger
+
+%% Process each file
+for loopct = 1:length(myfiles)
+    
+    %% Load the cont file
+    basefilename = myfiles(loopct).name;
+    fullfilename = fullfile(mydir, basefilename);
+    load(fullfilename); % Assuming the loaded file contains 'craw', 'trig', etc.
+
+    % Extract continuous ephys data and triggers
+    [~, cnte, ~, cntc, ~, ~] = module_cnt05(craw, Fs, [0.5 300], [300 5000], 1);
+    
+    %% Compute band-limited wavelet for CSD and LFP data
+    numChannels = size(cntc, 1);
+    timeLength = size(cntc, 2);  % Assuming all channels have the same number of time points
+    tempMaxPowerCSD = zeros(numChannels, timeLength);
+    tempMaxPowerLFP = zeros(numChannels, timeLength);
+    tempMaxPhaseCSD = zeros(numChannels, timeLength);
+    tempMaxPhaseLFP = zeros(numChannels, timeLength);
+
+    for ChanCt = 1:numChannels
+        % Compute for CSD
+        [amplitudeCSD, phaseCSD] = wvlt_bndlm_fxn(cntc(ChanCt,:), Fs, frequencyRange, targetBand);
+        % Compute for LFP
+        [amplitudeLFP, phaseLFP] = wvlt_bndlm_fxn(cnte(ChanCt,:), Fs, frequencyRange, targetBand);
+
+        % Store amplitude for each channel across the entire time
+        tempMaxPowerCSD(ChanCt, :) = amplitudeCSD;
+        tempMaxPowerLFP(ChanCt, :) = amplitudeLFP;
+        tempMaxPhaseCSD(ChanCt, :) = phaseCSD;
+        tempMaxPhaseLFP(ChanCt, :) = phaseLFP;
+        
+    end
+
+
+
+    %% Adjust Trigger Times to Match New Sampling Rate
+    originalFs = craw.adrate;  % Original sampling frequency
+
+
+    % Calculate ratio of old to new sampling rates
+    resampleRatio = Fs / originalFs;
+
+    % Adjust trigger times
+    adjustedTriggerTimes = round(trig.anatrig{1,1} * resampleRatio);
+    %% Identify trigger times of type "1"
+    triggerTypeOnesIndices = find(trig.ttype{1,1} == 1);
+    triggerTimesTypeOne = adjustedTriggerTimes(triggerTypeOnesIndices);  % Use adjusted times
+
+
+
+
+    %% epoch it
+    epochPowerCSD = [];
+    epochPowerLFP = [];
+    epochPhaseCSD = [];
+    epochPhaseLFP = [];
+
+    for i = 1:length(triggerTimesTypeOne)
+        triggerTime = triggerTimesTypeOne(i);
+
+        % Define epoch window around the trigger
+        epochStart = max(1, triggerTime + round(pre_stim_ms * (Fs / 1000)));
+        epochEnd = min(size(cntc, 2), triggerTime + round(post_stim_ms * (Fs / 1000)));
+
+        % Extract epoch data for CSD and LFP
+        tempEpochPowerCSD = tempMaxPowerCSD(:, epochStart:epochEnd);
+        tempEpochPowerLFP = tempMaxPowerLFP(:, epochStart:epochEnd);
+        tempEpochPhaseCSD = tempMaxPhaseCSD(:, epochStart:epochEnd);
+        tempEpochPhaseLFP = tempMaxPhaseLFP(:, epochStart:epochEnd);
+
+        % Store data to calculate averages later
+        epochPowerCSD = cat(2, epochPowerCSD, reshape(tempEpochPowerCSD, size(tempEpochPowerCSD, 1), 1, []));
+        epochPowerLFP = cat(2, epochPowerLFP, reshape(tempEpochPowerLFP, size(tempEpochPowerLFP, 1), 1, []));
+        epochPhaseCSD = cat(2, epochPhaseCSD, reshape(tempEpochPhaseCSD, size(tempEpochPhaseCSD, 1), 1, []));
+        epochPhaseLFP = cat(2, epochPhaseLFP, reshape(tempEpochPhaseLFP, size(tempEpochPhaseLFP, 1), 1, []));
+    end
+
+    %% Compute averages and standard deviations for power
+    % Average power across time (3rd dimension) first, then average these averages across trials (2nd dimension)
+    avgPowerCSD = mean(mean(epochPowerCSD, 3), 2);
+    stdPowerCSD = std(mean(epochPowerCSD, 3), 0, 2);
+    avgPowerLFP = mean(mean(epochPowerLFP, 3), 2);
+    stdPowerLFP = std(mean(epochPowerLFP, 3), 0, 2);
+
+    %% Process phase data at epoch midpoint
+    midIndex = floor(size(epochPhaseCSD, 3) / 2) + 1;  % Calculate the midpoint index of the epoch time dimension
+    midPhaseCSD = epochPhaseCSD(:, :, midIndex);  % Extract phase values at the midpoint for each trial
+    midPhaseLFP = epochPhaseLFP(:, :, midIndex);
+
+    % Average and standard deviation of phase values at the midpoint across trials
+    avgPhaseCSD = mean(midPhaseCSD, 2);
+    stdPhaseCSD = std(midPhaseCSD, 0, 2);
+    avgPhaseLFP = mean(midPhaseLFP, 2);
+    stdPhaseLFP = std(midPhaseLFP, 0, 2);
+
+    %% plots
+%% Define filenames for saving the figures and data
+% Create a new directory for figures if it doesn't exist
+figuresDir = fullfile(mydir, 'Figures');
+if ~exist(figuresDir, 'dir')
+    mkdir(figuresDir);
+end
+
+% Update figure file paths to new directory
+figureFileNameCSDPower = fullfile(figuresDir, [basefilename(1:end-4), '_AveragePower_CSD.fig']);
+figureFileNameLFPPower = fullfile(figuresDir, [basefilename(1:end-4), '_AveragePower_LFP.fig']);
+figureFileNameCSDPhase = fullfile(figuresDir, [basefilename(1:end-4), '_AveragePhase_CSD.fig']);
+figureFileNameLFPPhase = fullfile(figuresDir, [basefilename(1:end-4), '_AveragePhase_LFP.fig']);
+
+dataFileName = fullfile(figuresDir, [basefilename(1:end-4), '_AveragePowerPhaseData.mat']);
+
+% Preparing data in descending order
+channels = 1:numChannels;  % Assumed channel indexing
+channelsDesc = flip(channels);  % Flip if descending order is required
+
+avgPowerCSDDesc = flipud(avgPowerCSD);
+stdPowerCSDDesc = flipud(stdPowerCSD);
+avgPowerLFPDesc = flipud(avgPowerLFP);
+stdPowerLFPDesc = flipud(stdPowerLFP);
+avgPhaseCSDDesc = flipud(avgPhaseCSD);
+stdPhaseCSDDesc = flipud(stdPhaseCSD);
+avgPhaseLFPDesc = flipud(avgPhaseLFP);
+stdPhaseLFPDesc = flipud(stdPhaseLFP);
+
+%% Plot and save CSD Power figure
+fCSDPower = figure;
+plot(avgPowerCSDDesc, channels, 'b-o', 'MarkerFaceColor', 'b');
+title('Average CSD Power (8-14 Hz)');
+xlabel('Power');
+ylabel('Channel');
+set(gca, 'YTick', channels, 'YTickLabel', channelsDesc);
+ylim([1 numChannels]);
+saveas(fCSDPower, figureFileNameCSDPower);
+
+%% Plot and save LFP Power figure
+fLFPPower = figure;
+plot(avgPowerLFPDesc, channels, 'r-o', 'MarkerFaceColor', 'r');
+title('Average LFP Power (8-14 Hz)');
+xlabel('Power');
+ylabel('Channel');
+set(gca, 'YTick', channels, 'YTickLabel', channelsDesc);
+ylim([1 numChannels]);
+saveas(fLFPPower, figureFileNameLFPPower);
+
+%% Plot and save CSD Phase figure
+fCSDPhase = figure;
+plot(avgPhaseCSDDesc, channels, 'b-o', 'MarkerFaceColor', 'b');
+title('Average CSD Phase (8-14 Hz)');
+xlabel('Phase');
+ylabel('Channel');
+set(gca, 'YTick', channels, 'YTickLabel', channelsDesc);
+ylim([1 numChannels]);
+saveas(fCSDPhase, figureFileNameCSDPhase);
+
+%% Plot and save LFP Phase figure
+fLFPPhase = figure;
+plot(avgPhaseLFPDesc, channels, 'r-o', 'MarkerFaceColor', 'r');
+title('Average LFP Phase (8-14 Hz)');
+xlabel('Phase');
+ylabel('Channel');
+set(gca, 'YTick', channels, 'YTickLabel', channelsDesc);
+ylim([1 numChannels]);
+saveas(fLFPPhase, figureFileNameLFPPhase);
+
+
+%% Save the data
+save(dataFileName, 'avgPowerCSDDesc', 'avgPowerLFPDesc', 'stdPowerCSDDesc', 'stdPowerLFPDesc', 'avgPhaseCSDDesc', 'avgPhaseLFPDesc', 'stdPhaseCSDDesc', 'stdPhaseLFPDesc', 'channelsDesc', 'epochPowerCSD','epochPowerLFP','epochPhaseCSD','epochPhaseLFP');
+
+end
+
+%% Finalization
+toc;
