@@ -4,7 +4,7 @@ clear;
 close all;
 
 %% Set directory and parameters
-mydir = 'E:\spectrolaminar\AttnData\belt\cont\Figures\'; % Specify directory
+mydir = 'E:\spectrolaminar\AttnData\core\cont\Figures\'; % Specify directory
 myfiles = dir(fullfile(mydir, '*AveragePowerPhaseData.mat'));  % Adjust the pattern to match your new data files
 
 %% Process each file
@@ -12,10 +12,10 @@ myfiles = dir(fullfile(mydir, '*AveragePowerPhaseData.mat'));  % Adjust the patt
 highestChannelCSD = [];
 highestChannelLFP = [];
 
-for loopct = 1:length(myfiles)
+for loopct = 1:1%length(myfiles)
     % Load the data file
     dataFilePath = fullfile(mydir, myfiles(loopct).name);
-    load(dataFilePath, 'avgPowerCSDDesc', 'avgPowerLFPDesc', 'channelsDesc');
+    load(dataFilePath,'avgPhaseCSDDesc','avgPhaseLFPDesc', 'avgPowerCSDDesc', 'avgPowerLFPDesc', 'channelsDesc');
     
     % Find the indices of the maximum average power for CSD and LFP
     [~, idxCSD] = max(avgPowerCSDDesc);
